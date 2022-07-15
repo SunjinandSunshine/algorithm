@@ -13,7 +13,7 @@ public class ABCPrint2 {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                for (int i = 0; i < 1; i++) {
+                for (int i = 0; i < 10; i++) {
                     ad.loopA(2);
                 }
             }
@@ -21,7 +21,7 @@ public class ABCPrint2 {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                for (int i = 0; i < 1; i++) {
+                for (int i = 0; i < 10; i++) {
                     ad.loopB(2);
                 }
             }
@@ -29,7 +29,7 @@ public class ABCPrint2 {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                for (int i = 0; i < 1; i++) {
+                for (int i = 0; i < 10; i++) {
                     ad.loopC(2);
                 }
             }
