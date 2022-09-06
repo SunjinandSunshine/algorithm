@@ -1,85 +1,73 @@
 package code;
-
-import sun.plugin.ClassLoaderInfo;
-
-import javax.sound.sampled.FloatControl;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
-/**
- * @Author SunnyJ
- * @Date 2022/5/28 22:55
- */
 public class ABCPrint3 {
-    private static int num = 1;
-    private static Lock lock =  new ReentrantLock();
-    private static Condition condition1 = lock.newCondition();
-    private static Condition condition2 = lock.newCondition();
-    private static Condition condition3 = lock.newCondition();
-    public static void main(String[] args) {
-        Thread threadA = startThreadA("A", 10);
-        Thread threadB = startThreadA("B", 10);
-        Thread threadC = startThreadA("C", 10);
-        threadA.start();
-        threadB.start();
-        threadC.start();
-    }
-    public static Thread startThreadA(String threadName,int loop){
-        return new Thread(()->{
-            lock.lock();
-            for (int i=0;i<loop;i++) {
-                try {
-                    if(num!=1) {
-                        condition1.await();
-                    }
-                    System.out.println(Thread.currentThread().getName());
-                    num = 2;
-                    condition2.signal();
-                }catch (Exception e){
-                    System.out.println(e);
-                }finally {
-                    lock.unlock();
+    private static Lock lock = new ReentrantLock();
+    private static Condition A = lock.newCondition();
+    private static Condition B = lock.newCondition();
+    private static Condition C = lock.newCondition();
+    private static int count = 0;
+    static class ThreadA extends Thread {
+        @Override
+        public void run() {
+            try {
+                lock.lock();
+                for (int i = 0; i < 100; i++) {
+                    while (count % 3 != 0)//注意这里是不等于0，也就是说在count % 3为0之前，当前线程一直阻塞状态
+                        A.await(); // A释放lock锁
+                    System.out.print("A");
+                    count++;
+                    B.signal(); // A执行完唤醒B线程
                 }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
+                lock.unlock();
             }
-        },threadName);
+        }
     }
-    public static Thread startThreadB(String threadName,int loop){
-        return new Thread(()->{
-            lock.lock();
-            for (int i=0;i<loop;i++) {
-                try {
-                    if(num!=2) {
-                        condition1.await();
-                    }
-                    System.out.println(Thread.currentThread().getName());
-                    num = 3;
-                    condition3.signal();
-                }catch (Exception e){
-                    System.out.println(e);
-                }finally {
-                    lock.unlock();
+    static class ThreadB extends Thread {
+        @Override
+        public void run() {
+            try {
+                lock.lock();
+                for (int i = 0; i < 100; i++) {
+                    while (count % 3 != 1)
+                        B.await();// B释放lock锁，当前面A线程执行后会通过B.signal()唤醒该线程
+                    System.out.print("BB");
+                    count++;
+                    C.signal();// B执行完唤醒C线程
                 }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
+                lock.unlock();
             }
-        },threadName);
+        }
     }
-    public static Thread startThreadC(String threadName,int loop){
-        return new Thread(()->{
-            lock.lock();
-            for (int i=0;i<loop;i++) {
-                try {
-                    if(num!=3) {
-                        condition1.await();
-                    }
-                    System.out.println(Thread.currentThread().getName());
-                    num = 1;
-                    condition1.signal();
-                }catch (Exception e){
-                    System.out.println(e);
-                }finally {
-                    lock.unlock();
+    static class ThreadC extends Thread {
+        @Override
+        public void run() {
+            try {
+                lock.lock();
+                for (int i = 0; i < 100; i++) {
+                    while (count % 3 != 2)
+                        C.await();// C释放lock锁，当前面B线程执行后会通过C.signal()唤醒该线程
+                    System.out.println("C");
+                    count++;
+                    A.signal();// C执行完唤醒A线程
                 }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
+                lock.unlock();
             }
-        },threadName);
+        }
+    }
+    public static void main(String[] args) throws InterruptedException {
+        new ThreadA().start();
+        new ThreadB().start();
+        new ThreadC().start();
     }
 }
